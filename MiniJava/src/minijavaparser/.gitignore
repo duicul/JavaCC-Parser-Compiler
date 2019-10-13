@@ -1,0 +1,15 @@
+/ASTMainClass.java
+/ASTProgram.java
+/JJTMiniJavaState.java
+/MiniJava.jj
+/MiniJavaTreeConstants.java
+/MiniJavaVisitor.java
+/MyNewGrammar.java
+/MyNewGrammarConstants.java
+/MyNewGrammarTokenManager.java
+/Node.java
+/ParseException.java
+/SimpleCharStream.java
+/SimpleNode.java
+/Token.java
+/TokenMgrError.java

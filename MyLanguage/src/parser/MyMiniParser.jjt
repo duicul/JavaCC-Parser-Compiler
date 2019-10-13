@@ -1,0 +1,231 @@
+/**
+ * JJTree template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */options{    LOOKAHEAD = 3;
+	FORCE_LA_CHECK = true;
+	CHOICE_AMBIGUITY_CHECK = 2;
+	OTHER_AMBIGUITY_CHECK = 1;
+	DEBUG_PARSER = true;
+	DEBUG_LOOKAHEAD = true ;
+	DEBUG_TOKEN_MANAGER = true ;
+	TRACK_TOKENS = true;
+	NODE_PREFIX="AST";
+	MULTI = true;
+	VISITOR = true;}PARSER_BEGIN(MyMiniParser)package parser;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import javax.swing.JTree;
+import javax.swing.tree.DefaultMutableTreeNode;
+import domain.DomainTable; 
+public class MyMiniParser{  public static void main(String args [])  {    System.out.println("Reading from standard input...");
+    try    { InputStream is=new FileInputStream(new File("test01.java"));
+      MyMiniParser p = new MyMiniParser(is);      SimpleNode n = p.Program();      n.dump("");      System.out.println("Thank you.");
+      PrintVisitor pv= new PrintVisitor();
+      //n.jjtAccept(pv,null);
+      DomainVisitor dv= new DomainVisitor();
+      n.jjtAccept(dv,null);
+      System.out.println(DomainTable.instance());
+      DefaultMutableTreeNode dmt=new DefaultMutableTreeNode("Root");
+      TreeVisitor tv= new TreeVisitor();	  n.jjtAccept(tv,dmt);
+	  new TreeDisplay(new JTree(dmt),500,500);
+    }    catch (Exception e)    {      System.out.println("Oops.");      e.printStackTrace();    }  }}PARSER_END(MyMiniParser)SKIP :{  " "| "\t"| "\n"| "\r"| < "//" (~[ "\n", "\r" ])*    (      "\n"    | "\r"    | "\r\n"    ) >| < "/*" (~[ "*" ])* "*"    (      ~[ "/" ] (~[ "*" ])* "*"    )*    "/" >}TOKEN : /* KEYWORDS */
+{
+  <CLASS: "class">
+| <PUBLIC: "public">
+| <STATIC: "static">
+| <VOID: "void">
+| <MAIN: "main">
+| <STRING: "String">
+| <EXTENDS: "extends">
+| <IF: "if">
+| <ELSE: "else">
+| <WHILE: "while">
+| <PRINTLN: "System.out.println">
+| <RETURN: "return">
+| <INT: "int">
+| <LONG: "long">
+| <FLOAT: "float">
+| <DOUBLE: "double">
+| <BOOLEAN: "boolean">
+| <LENGTH: "length">
+| <TRUE: "true">
+| <FALSE: "false">
+| <THIS: "this">
+| <NEW: "new">
+| < PACKAGE: "package" >
+} 
+
+TOKEN : /* IDENTIFIERS */
+{
+  < IDENTIFIER :  < LETTER >(< LETTER >| < DIGIT >)* >
+| < #LETTER : [ "_", "a"-"z", "A"-"Z" ] >
+| < #DIGIT : [ "0"-"9" ] >
+}
+
+TOKEN : /* IDENTIFIERS */
+{
+  <INTEGER: (<DIGIT>|["1"-"9"](<DIGIT >)*) >
+| <LITERAL: (<LETTER>|<INTEGER>)+ >
+}
+
+TOKEN : /* SEPARATORS */
+{
+  <LBRACKET: "[">
+| <RBRACKET: "]">
+| <LPAREN: "(">
+| <RPAREN: ")">
+| <LACCOLADE: "{">
+| <RACCOLADE: "}">
+| <COMMA: ",">
+}
+
+TOKEN : /* OPERATORS */
+{
+  < PLUS : "+" >
+| < MINUS : "-" >
+| < MULTIPLY : "*" >
+| < DIVIDE : "/" >
+| < POWER : "^" >
+}
+
+SimpleNode Program():
+{Token t=null;}
+{ (< PACKAGE > t=<IDENTIFIER >)?  MainClass() (ClassDecl())* < EOF >
+  {jjtThis.value=t==null?"None":t.image;
+    return jjtThis;
+  } 
+//<CLASS>ClassName()<LACCOLADE>(Methods())*<RACCOLADE><EOF>
+  
+ // <IF> BooleanExpression()<EOF>
+}
+
+void MainClass():
+{Token t =null; }
+{<CLASS> t=<IDENTIFIER> <LACCOLADE><PUBLIC><STATIC><VOID> "main" <LPAREN><STRING>"[]"<IDENTIFIER><RPAREN><LACCOLADE>(Statement())*<RACCOLADE><RACCOLADE>
+	{jjtThis.value=t==null?"None":t.image;
+	}
+}
+
+void ClassDecl():
+{Token t1 =null;Token t2 =null;}
+{<CLASS> t1=<IDENTIFIER>(<EXTENDS>t2=<IDENTIFIER>)*<LACCOLADE>(VarDecl())* (MethodDecl())*<RACCOLADE>
+{String [] s={ t1==null?null:t1.image ,t2==null?null:t2.image};
+  jjtThis.value=s ;
+	}
+}  
+
+void VarDecl():
+{ Token t =null; }
+{Type() t=<IDENTIFIER> ("=" Exp())? ";"
+{jjtThis.value=t.image;}
+}
+
+void MethodDecl():
+{Token t =null; }
+{<PUBLIC> Type() t=<IDENTIFIER> <LPAREN>(FormalList())*<RPAREN><LACCOLADE>(VarDecl())* (Statement())* ("return" Exp() ";")*<RACCOLADE>
+{jjtThis.value=t.image;}
+}
+  
+void FormalList():
+{ Token t =null; }
+{Type() t=<IDENTIFIER> (FormalRest())*
+ {jjtThis.value=t.image;}
+ }
+
+void FormalRest():
+{ Token t =null;}
+{"," Type() t=<IDENTIFIER>
+ {jjtThis.value=t.image;}
+}
+  
+void Statement():
+{Token t =null; }
+{<LACCOLADE>(Statement())*<RACCOLADE>
+| <IF><LPAREN>Exp()<RPAREN>Statement()
+| "System.out.println"<LPAREN>Exp()<RPAREN>";"
+| t=<IDENTIFIER> ("[" Exp() "]")? "=" Exp() ";"
+| Exp() ";"
+{jjtThis.value=t==null?null:t.image;}
+ }
+
+ /*void Exp():
+ { }
+ {<INTEGER> (Operation() <INTEGER >)*
+| "\"" <LITERAL> "\""
+| <TRUE>
+| <FALSE>
+| <IDENTIFIER>
+| <THIS>
+| <NEW> ((<INT> "[" Exp() "]")|(<IDENTIFIER> <LPAREN><RPAREN>))
+| "!" Exp()
+| <LPAREN> Exp() <RPAREN>
+
+
+| Exp() "[" Exp() "]"
+| Exp() "." < LENGTH >
+| Exp() "." <IDENTIFIER> <LPAREN> ExpList() <RPAREN>
+ }*/
+
+void Exp():
+ {Token t=null;}
+{(<INTEGER>
+|"'" (<LITERAL>|< IDENTIFIER >) "'"
+| <TRUE>
+| <FALSE>
+|t= <IDENTIFIER>
+| <THIS>
+| <NEW> ((<INT> "[" Exp() "]")
+|(t=<IDENTIFIER> <LPAREN><RPAREN>))
+| "!" Exp()
+| <LPAREN> Exp() <RPAREN>)
+Expp()
+{jjtThis.value=t==null ?null:t.image;}
+}
+
+void Expp():
+{}
+{
+( "[" Exp() "]" Expp()
+|"." < LENGTH > Expp()
+| "." <IDENTIFIER> <LPAREN> ExpList() <RPAREN> Expp()
+| Operation() Exp() Expp()
+)?
+
+}
+  
+ 
+
+void ExpList():
+{ }
+{ Exp() (ExpRest())*
+}
+  
+void ExpRest():
+{Token t=null; }
+{t="," Exp()
+{jjtThis.value=t==null?"None":t.image;}
+} 
+
+void Operation():
+{ Token t=null;}
+{(t=< PLUS >|t=< MINUS >|t=<DIVIDE >|t=<MULTIPLY>)
+{jjtThis.value=t.image;}
+} 
+/* 
+void Operation1():
+{ Token t=null;}
+{(t=< PLUS >|t=< MINUS >|t=<DIVIDE >|t=<MULTIPLY>)
+{jjtThis.value=t.image;}
+}
+
+void Operation2():
+{ Token t=null;}
+{(t=< PLUS >|t=< MINUS >)
+{jjtThis.value=t.image;}
+}
+*/
+void Type():
+{Token t=null;}
+{(t=<INT>| t= <STRING>|t= <STRING> |t= <FLOAT>|t=<DOUBLE>|t=<LONG>|t=<VOID>)
+{jjtThis.value=t.image;}
+}

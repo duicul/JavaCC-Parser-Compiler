@@ -1,0 +1,58 @@
+/**
+ * JJTree template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */options{   LOOKAHEAD = 3;
+	FORCE_LA_CHECK = true;
+	CHOICE_AMBIGUITY_CHECK = 2;
+	OTHER_AMBIGUITY_CHECK = 1;
+	DEBUG_PARSER = true;
+	DEBUG_LOOKAHEAD = true ;
+	DEBUG_TOKEN_MANAGER = true ;
+	TRACK_TOKENS = true;
+	NODE_PREFIX="AST";
+	MULTI = true;
+	VISITOR = true;}PARSER_BEGIN(Polish)package lab4polish;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import javax.swing.JTree;
+import javax.swing.tree.DefaultMutableTreeNode;
+public class Polish{  public static void main(String args [])  {  try    {
+      InputStream is=new FileInputStream(new File("test02.java"));
+      Polish p = new Polish(is);      SimpleNode n = p.Start();      n.dump("");
+      InfixVisitor iv= new InfixVisitor();
+      System.out.println(n.jjtAccept(iv,null));
+      PostfixVisitor pv= new PostfixVisitor();
+      System.out.println(n.jjtAccept(pv,null));
+      PrefixVisitor pr= new PrefixVisitor();
+      System.out.println(n.jjtAccept(pr,null));
+      EvalVisitor ev= new EvalVisitor();
+      System.out.println(n.jjtAccept(ev,null));
+       DefaultMutableTreeNode dmt=new DefaultMutableTreeNode("Root");
+      TreeVisitor tv= new TreeVisitor();
+	  n.jjtAccept(tv,dmt);
+	  new TreeDisplay(new JTree(dmt),500,500);    }    catch (Exception e)    {      System.out.println("Oops.");      e.printStackTrace();    }  }}PARSER_END(Polish)SKIP :{  " "| "\t"| "\n"| "\r"| < "//" (~[ "\n", "\r" ])*    (      "\n"    | "\r"    | "\r\n"    ) >| < "/*" (~[ "*" ])* "*"    (      ~[ "/" ] (~[ "*" ])* "*"    )*    "/" >}TOKEN : /* LITERALS */{ <INTEGER: (<DIGIT>|["1"-"9"](<DIGIT >)*) >
+| < #DIGIT : [ "0"-"9" ] >}
+
+SimpleNode Start() :{Token t=null;}{  Exp() < EOF >  {    return jjtThis;  }}void Exp() :{}{  Term() Expp()}
+
+void Expp() :
+{Token t=null; }
+{
+  (t="+" Term() Expp())?
+  {jjtThis.value=t==null?"":t.image;}}  void Term():
+{ }
+{
+  Factor() Termp()
+}
+
+void Termp():
+{Token t=null;}
+{ (t="*" Factor() Termp())?
+  {jjtThis.value=t==null?"":t.image;}
+}
+
+void Factor():
+{Token t1=null,t2=null;}
+{
+   (t1="(" Exp() t2=")" {String [] s={ t1.image,t2.image }; jjtThis.value= s; } )|( t1=< INTEGER > { String [] s={ t1.image };jjtThis.value=s; })
+}
