@@ -28,6 +28,7 @@ public class MyMiniParser{  public static void main(String args [])  {    Sy
       DefaultMutableTreeNode dmt=new DefaultMutableTreeNode("Root");
       TreeVisitor tv= new TreeVisitor();	  n.jjtAccept(tv,dmt);
 	  new TreeDisplay(new JTree(dmt),500,500);
+	  DomainTable.instance().generatetree();
     }    catch (Exception e)    {      System.out.println("Oops.");      e.printStackTrace();    }  }}PARSER_END(MyMiniParser)SKIP :{  " "| "\t"| "\n"| "\r"| < "//" (~[ "\n", "\r" ])*    (      "\n"    | "\r"    | "\r\n"    ) >| < "/*" (~[ "*" ])* "*"    (      ~[ "/" ] (~[ "*" ])* "*"    )*    "/" >}TOKEN : /* KEYWORDS */
 {
   <CLASS: "class">
@@ -140,11 +141,11 @@ void FormalRest():
   
 void Statement():
 {Token t =null; }
-{<LACCOLADE>(Statement())*<RACCOLADE>
+{(<LACCOLADE>(Statement())*<RACCOLADE>
 | <IF><LPAREN>Exp()<RPAREN>Statement()
 | "System.out.println"<LPAREN>Exp()<RPAREN>";"
-| t=<IDENTIFIER> ("[" Exp() "]")? "=" Exp() ";"
-| Exp() ";"
+| ((t=<IDENTIFIER>) ("[" Exp() "]")? "=" Exp() ";")
+| Exp() ";")
 {jjtThis.value=t==null?null:t.image;}
  }
 
@@ -168,16 +169,16 @@ void Statement():
 
 void Exp():
  {Token t=null;}
-{(<INTEGER>
-|"'" (<LITERAL>|< IDENTIFIER >) "'"
-| <TRUE>
-| <FALSE>
+{(t=<INTEGER>
+|"'" (t=<LITERAL>|t=< IDENTIFIER >) "'"
+|t= <TRUE>
+|t= <FALSE>
 |t= <IDENTIFIER>
-| <THIS>
-| <NEW> ((<INT> "[" Exp() "]")
+|t= <THIS>
+| t=<NEW> ((<INT> "[" Exp() "]")
 |(t=<IDENTIFIER> <LPAREN><RPAREN>))
 | "!" Exp()
-| <LPAREN> Exp() <RPAREN>)
+| t=<LPAREN> Exp() <RPAREN>)
 Expp()
 {jjtThis.value=t==null ?null:t.image;}
 }

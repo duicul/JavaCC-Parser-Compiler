@@ -1,5 +1,7 @@
 package domain;
 
+import javax.swing.tree.DefaultMutableTreeNode;
+
 public class ClassVar extends Var{
     private String access;
 	public ClassVar(String type,String name,String val,String access) {
@@ -18,4 +20,8 @@ public class ClassVar extends Var{
 			return this.name.equals(a.name);}
 		return false;
 	}
+	
+	@Override
+	public void generatetree(DefaultMutableTreeNode dmt) {
+		dmt.add(new DefaultMutableTreeNode(this.access+" "+this.type+" "+this.name+"="+this.val));}
 }

@@ -1,5 +1,7 @@
 package domain;
 
+import javax.swing.tree.DefaultMutableTreeNode;
+
 public class Var extends Domain {
     protected String name,val,type;
 	public Var(String type,String name,String val) {
@@ -9,12 +11,13 @@ public class Var extends Domain {
 	}
 
 	@Override
-	public boolean test(String name) {
+	public boolean test(Domain d) {
 		return true;
 	}
 
 	@Override
-	public void add(Domain d) {
+	public boolean add(Domain d) {
+		return false;
 		// TODO Auto-generated method stub
 		
 	}
@@ -30,5 +33,9 @@ public class Var extends Domain {
 			return this.name.equals(a.name);}
 		return false;
 	}
+
+	@Override
+	public void generatetree(DefaultMutableTreeNode dmt) {
+		dmt.add(new DefaultMutableTreeNode(this.type+" "+this.name+"="+this.val));}
 
 }

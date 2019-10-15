@@ -3,6 +3,8 @@ package domain;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.tree.DefaultMutableTreeNode;
+
 public class Method extends Domain {
 	private String val,access;
 	private List<Argument> lm=new ArrayList<Argument>();
@@ -14,25 +16,55 @@ public class Method extends Domain {
 	}
 
 	@Override
-	public boolean test(String name) {
-		// TODO Auto-generated method stub
+	public boolean test(Domain d) {
+		if(d instanceof Argument) {
+			Argument a=(Argument)d;
+			for(Argument i:this.lm)
+				if(a.equals(i)) {
+					DomainException de=new DomainException("Arguments "+a+" and "+i+" have the same name");
+					DomainTable.instance().addfinalanalysis(this, de,d);
+					return false;
+					//throw de;
+					}
+			return true;}
+		if(d instanceof Var) {
+			Var a=(Var)d;
+			for(Var i:this.lv)
+				if(a.equals(i)) {
+					DomainException de=new DomainException("Variables "+a+" and "+i+" have the same name");
+					DomainTable.instance().addfinalanalysis(this, de,d);
+					return false;
+					//throw de
+					}
+			return true;}
 		return false;
 	}
 	
 	@Override
-	public void add(Domain d) throws DomainException {
+	public boolean add(Domain d) throws DomainException {
 		if(d instanceof Argument) {
 			Argument a=(Argument)d;
 			for(Argument i:this.lm)
-				if(a.equals(i))
-					throw new DomainException("Arguments "+a+" and "+i+" have the same name");
-			lm.add((Argument) d);}
+				if(a.equals(i)) {
+					DomainException de=new DomainException("Arguments "+a+" and "+i+" have the same name");
+					DomainTable.instance().addfinalanalysis(this, de,d);
+					return false;
+					//throw de;
+				}
+				lm.add((Argument) d);
+			return true;}
 		if(d instanceof Var) {
 			Var a=(Var)d;
 			for(Var i:this.lv)
-				if(a.equals(i))
-					throw new DomainException("Variables "+a+" and "+i+" have the same name");
-			lv.add((Var) d);}
+				if(a.equals(i)) {
+					DomainException de=new DomainException("Variables "+a+" and "+i+" have the same name");
+					DomainTable.instance().addfinalanalysis(this, de,d);
+					return false;
+					//throw de;
+				}
+			lv.add((Var) d);
+			return true;}
+		return false;
 	}
 	
 	@Override
@@ -42,16 +74,23 @@ public class Method extends Domain {
 			if(!a.name.equals(this.name))
 				return false;
 			int cnt=0;
-			if(this.lm.size()!=a.lm.size())
-				return false;
-			for(Argument a1:this.lm)
-				for(Argument a2:a.lm)
-					if(a1.match(a2)) {
-						cnt++;break;}
+			if(this.lm.size()!=a.lm.size()) {
+				System.out.println("\n"+this.lm.size()+" "+a.lm.size());
+				return false;}
+			for(int i=0;i<this.lm.size();i++) 
+				if(this.lm.get(i).match(a.lm.get(i))) 
+					cnt++;
 			if(cnt==this.lm.size())
 				return true;
 			}
 		return false;
+	}
+	
+	public String signature() {
+		String s=this.access+" "+this.name;
+		for(Argument a:this.lm)
+			s+=" "+a.toString();
+		return s;
 	}
 	
 	public String toString() {
@@ -71,5 +110,19 @@ public class Method extends Domain {
 			if(a.name.equals(name))
 				return true;
 		return false;
+	}
+
+	@Override
+	public void generatetree(DefaultMutableTreeNode dmt) {
+		DefaultMutableTreeNode dmt1=new DefaultMutableTreeNode("Method "+ this.name);
+		dmt.add(dmt1);
+		DefaultMutableTreeNode dmt2=new DefaultMutableTreeNode("Arguments");
+		DefaultMutableTreeNode dmt3=new DefaultMutableTreeNode("Variables");
+		dmt1.add(dmt2);
+		dmt1.add(dmt3);
+		for(Argument a:this.lm)
+			a.generatetree(dmt2);
+		for(Var v:this.lv)
+			v.generatetree(dmt3);		
 	}
 }

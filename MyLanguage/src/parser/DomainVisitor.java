@@ -114,7 +114,7 @@ public class DomainVisitor implements MyMiniParserVisitor {
 	@Override
 	public Object visit(ASTStatement node, Object data) {
 		if(node.value!=null) {
-			DomainTable.instance().vardefined((String) node.value);
+			DomainTable.instance().vardefined((String) node.value,null);
 		}
 		return null;
 	}
@@ -122,8 +122,8 @@ public class DomainVisitor implements MyMiniParserVisitor {
 	@Override
 	public Object visit(ASTExp node, Object data) {
 		String name=(String) node.value;
-		if(name!=null)
-			DomainTable.instance().typeexists(name);
+		/*if(name!=null)
+			DomainTable.instance().typeexists(name);*/
 		return null;
 	}
 

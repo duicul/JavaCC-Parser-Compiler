@@ -3,10 +3,19 @@ package domain;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JFrame;
+import javax.swing.JTree;
+import javax.swing.tree.DefaultMutableTreeNode;
+
+
+import parser.TreeVisitor;
+
 public class DomainTable {
     private static DomainTable dt=null;
     private Domain current=null;
     private static List<TypeTable> tt;
+    private static List<Truple<Domain,DomainException,Domain>> finaltest=new ArrayList<Truple<Domain,DomainException,Domain>>();
+ 
 	private DomainTable() {
     }
 	
@@ -55,8 +64,8 @@ public class DomainTable {
 		//return false;
 		}
 	
-	public boolean vardefined(String name) {
-		Domain cls=this.current;
+	public boolean vardefined(String name,Domain node) {
+		Domain cls=node==null?this.current:node;
 		if(this.current instanceof Method) {
 			cls=current.upper;
 			if(((Method)current).searchvar(name))
@@ -67,6 +76,13 @@ public class DomainTable {
 	}
 	
 	public boolean jumpup() {
+		if(this.current instanceof Packet) {
+		 for(Truple<Domain,DomainException,Domain> pdde:DomainTable.finaltest)
+			 if(!pdde.t1.test(pdde.t3))
+				 throw pdde.t2;}
+		if(this.current instanceof Method) {
+			Method a=(Method)this.current;
+			((Class)this.current.upper).check(a);}
 		if(this.current.upper==null)
 			return false;
 		this.current=this.current.upper;
@@ -80,6 +96,22 @@ public class DomainTable {
 	for(TypeTable t:this.tt)
 		s+=t.toString();
 	return d.toString()+"\n"+s;
+	}
+	
+	public void generatetree() {
+		TreeVisitor tv= new TreeVisitor();
+		Domain d;
+		for(d=this.current;d.upper!=null;d=d.upper);
+		DefaultMutableTreeNode dmt = new DefaultMutableTreeNode("Start");
+		d.generatetree(dmt);
+		JFrame f=new JFrame(); 
+		f.add(new JTree(dmt));  
+		f.setSize(500,500);  
+		f.setVisible(true);
+	}
+	
+	public void addfinalanalysis(Domain parent,DomainException de,Domain child) {
+		this.finaltest.add(new Truple(parent,de,child));
 	}
 	
 }
