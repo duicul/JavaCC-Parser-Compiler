@@ -5,6 +5,7 @@ class Secondary extends Teta{
 	int a1;
 	int are;
 	String a;
+	Teta t;
 	public void yup43(int hex1,int hex2){
 		int ana = 12;
 		String gogu = 56;

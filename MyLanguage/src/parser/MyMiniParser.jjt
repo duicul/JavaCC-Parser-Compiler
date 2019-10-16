@@ -227,6 +227,6 @@ void Operation2():
 */
 void Type():
 {Token t=null;}
-{(t=<INT>| t= <STRING>|t= <STRING> |t= <FLOAT>|t=<DOUBLE>|t=<LONG>|t=<VOID>)
+{(t=<INT>| t= <STRING>|t= <FLOAT>|t=<DOUBLE>|t=<LONG>|t=<VOID>|t=<IDENTIFIER>)
 {jjtThis.value=t.image;}
 }

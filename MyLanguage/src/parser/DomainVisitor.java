@@ -6,6 +6,7 @@ import domain.Domain;
 import domain.DomainTable;
 import domain.Method;
 import domain.Packet;
+import domain.Program;
 import domain.Var;
 
 public class DomainVisitor implements MyMiniParserVisitor {
@@ -21,10 +22,12 @@ public class DomainVisitor implements MyMiniParserVisitor {
 
 	@Override
 	public Object visit(ASTProgram node, Object data) {
+		DomainTable.instance().add(new Program("Start"));
 		DomainTable.instance().add(new Packet((String) node.value));
 		if(node.children!=null)
 		for(Node n:node.children)
 			n.jjtAccept(this, data);
+		DomainTable.instance().jumpup();
 		DomainTable.instance().jumpup();
 		return data;
 	}

@@ -21,24 +21,34 @@ public class Method extends Domain {
 			Argument a=(Argument)d;
 			for(Argument i:this.lm)
 				if(a.equals(i)) {
-					DomainException de=new DomainException("Arguments "+a+" and "+i+" have the same name");
-					DomainTable.instance().addfinalanalysis(this, de,d);
+					//DomainException de=new DomainException("Arguments "+a+" and "+i+" have the same name");
+					//DomainTable.instance().addfinalanalysis(this, de,d);
 					return false;
 					//throw de;
 					}
 			return true;}
 		if(d instanceof Var) {
 			Var a=(Var)d;
+			if(!Domain.isprimitive(a.type)) {
+				Domain dom=this;
+				for(dom=this;dom.upper!=null&&!(dom instanceof Packet);dom=dom.upper);
+					if((dom instanceof Packet)&&Packet.listcontain(((Packet)dom).lc,a.type)==null) {
+						//DomainException de=new DomainException("Class "+a.type+" is not defined");
+					    //DomainTable.instance().addfinalanalysis(a, de,null);
+					    return false;}
+					}
 			for(Var i:this.lv)
 				if(a.equals(i)) {
-					DomainException de=new DomainException("Variables "+a+" and "+i+" have the same name");
-					DomainTable.instance().addfinalanalysis(this, de,d);
+					//DomainException de=new DomainException("Variables "+a+" and "+i+" have the same name");
+					//DomainTable.instance().addfinalanalysis(this, de,d);
 					return false;
 					//throw de
 					}
 			return true;}
 		return false;
 	}
+	
+	
 	
 	@Override
 	public boolean add(Domain d) throws DomainException {

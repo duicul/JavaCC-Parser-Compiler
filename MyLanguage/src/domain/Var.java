@@ -12,7 +12,13 @@ public class Var extends Domain {
 
 	@Override
 	public boolean test(Domain d) {
-		return true;
+		Domain dom=this;
+		for(dom=this;dom.upper!=null&&!(dom instanceof Program);dom=dom.upper);
+		if(dom instanceof Program)
+		if(((Program)dom).findClass(this.type)) 
+		    return true;
+		
+		return false;
 	}
 
 	@Override

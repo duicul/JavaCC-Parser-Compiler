@@ -40,10 +40,21 @@ public class Class extends Domain {
 	public boolean add(Domain d) {
 			if(d instanceof ClassVar) {
 				ClassVar a=(ClassVar)d;
+				if(!Packet.isprimitive(a.type)) {
+					Domain dom=this;
+					for(dom=this;dom.upper!=null&&!(dom instanceof Packet);dom=dom.upper);
+					if((dom instanceof Packet)&&Packet.listcontain(((Packet)dom).lc,a.type)==null) {
+							DomainException de=new DomainException("Class "+a.type+" is not defined");
+						    DomainTable.instance().addfinalanalysis(a, de,null);
+						    lcv.add((ClassVar) d);
+						    return false;}
+				}
+					
 				for(ClassVar i:this.lcv)
 					if(a.equals(i)) {
 						DomainException e=new DomainException("Class attributes "+a+" and "+i+" have the same name");
 						DomainTable.instance().addfinalanalysis(this,e,d );
+						lcv.add((ClassVar) d);
 						return false;
 						//throw e;
 					}
