@@ -1,0 +1,275 @@
+/**
+ * JJTree template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */options{    LOOKAHEAD = 3;
+	FORCE_LA_CHECK = true;
+	CHOICE_AMBIGUITY_CHECK = 2;
+	OTHER_AMBIGUITY_CHECK = 1;
+	DEBUG_PARSER = true;
+	DEBUG_LOOKAHEAD = true ;
+	DEBUG_TOKEN_MANAGER = true ;
+	TRACK_TOKENS = true;
+	NODE_PREFIX="AST";
+	MULTI = true;
+	VISITOR = true;}PARSER_BEGIN(MyMiniParser)package parservalue;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import javax.swing.JTree;
+import javax.swing.tree.DefaultMutableTreeNode;
+import domain.DomainTable; 
+public class MyMiniParser{  public static void main(String args [])  {    System.out.println("Reading from standard input...");
+    try    { InputStream is=new FileInputStream(new File("test03.java"));
+      MyMiniParser p = new MyMiniParser(is);      SimpleNode n = p.Program();      n.dump("");      System.out.println("Thank you.");
+      //PrintVisitor pv= new PrintVisitor();
+      //n.jjtAccept(pv,null);
+      DomainVisitor dv= new DomainVisitor();
+      n.jjtAccept(dv,null);
+      System.out.println(DomainTable.instance());
+      DefaultMutableTreeNode dmt=new DefaultMutableTreeNode("Root");
+      TreeVisitor tv= new TreeVisitor();	  n.jjtAccept(tv,dmt);
+	  new TreeDisplay(new JTree(dmt),500,500);
+	  DomainTable.instance().generatetree();
+    }    catch (Exception e)    {      System.out.println("Oops.");      e.printStackTrace();    }  }}PARSER_END(MyMiniParser)SKIP :{  " "| "\t"| "\n"| "\r"| < "//" (~[ "\n", "\r" ])*    (      "\n"    | "\r"    | "\r\n"    ) >| < "/*" (~[ "*" ])* "*"    (      ~[ "/" ] (~[ "*" ])* "*"    )*    "/" >}TOKEN : /* KEYWORDS */
+{
+  <CLASS: "class">
+| <PUBLIC: "public">
+| <STATIC: "static">
+| <VOID: "void">
+| <MAIN: "main">
+| <STRING: "String">
+| <EXTENDS: "extends">
+| <IF: "if">
+| <ELSE: "else">
+| <WHILE: "while">
+| <PRINTLN: "System.out.println">
+| <RETURN: "return">
+| <INT: "int">
+| <LONG: "long">
+| <FLOAT: "float">
+| <DOUBLE: "double">
+| <BOOLEAN: "boolean">
+| <LENGTH: "length">
+| <TRUE: "true">
+| <FALSE: "false">
+| <THIS: "this">
+| <NEW: "new">
+| < PACKAGE: "package" >
+} 
+
+TOKEN : /* IDENTIFIERS */
+{
+  < IDENTIFIER :  < LETTER >(< LETTER >| < DIGIT >)* >
+| < #LETTER : [ "_", "a"-"z", "A"-"Z" ] >
+| < #DIGIT : [ "0"-"9" ] >
+}
+
+TOKEN : /* IDENTIFIERS */
+{
+  <INTEGER: (<DIGIT>|["1"-"9"](<DIGIT >)*) >
+| <LITERAL: (<LETTER>|<INTEGER>)+ >
+}
+
+TOKEN : /* SEPARATORS */
+{
+  <LBRACKET: "[">
+| <RBRACKET: "]">
+| <LPAREN: "(">
+| <RPAREN: ")">
+| <LACCOLADE: "{">
+| <RACCOLADE: "}">
+| <COMMA: ",">
+}
+
+TOKEN : /* OPERATORS */
+{
+  < PLUS : "+" >
+| < MINUS : "-" >
+| < MULTIPLY : "*" >
+| < DIVIDE : "/" >
+| < POWER : "^" >
+}
+
+SimpleNode Program():
+{Token t=null;}
+{ (< PACKAGE > t=<IDENTIFIER >)?  MainClass() (ClassDecl())* < EOF >
+  {jjtThis.value=t==null?"None":t.image;
+    return jjtThis;
+  } 
+//<CLASS>ClassName()<LACCOLADE>(Methods())*<RACCOLADE><EOF>
+  
+ // <IF> BooleanExpression()<EOF>
+}
+
+void MainClass():
+{Token t =null; }
+{<CLASS> t=<IDENTIFIER> <LACCOLADE><PUBLIC><STATIC><VOID> "main" <LPAREN><STRING>"[]"<IDENTIFIER><RPAREN><LACCOLADE>(Statement())*<RACCOLADE><RACCOLADE>
+	{jjtThis.value=t==null?"None":t.image;
+	}
+}
+
+void ClassDecl():
+{Token t1 =null;Token t2 =null;}
+{<CLASS> t1=<IDENTIFIER>(<EXTENDS>t2=<IDENTIFIER>)*<LACCOLADE>(VarDecl())* (MethodDecl())*<RACCOLADE>
+{String [] s={ t1==null?null:t1.image ,t2==null?null:t2.image};
+  jjtThis.value=s ;
+	}
+}  
+
+void VarDecl():
+{ Token t =null; }
+{Type() t=<IDENTIFIER> ";"
+{jjtThis.value=t.image;}
+}
+
+void MethodDecl():
+{Token t =null; }
+{<PUBLIC> Type() t=<IDENTIFIER> <LPAREN>(FormalList())*<RPAREN><LACCOLADE>(VarDecl())* (Statement())* ("return" Exp() ";")?<RACCOLADE>
+{jjtThis.value=t.image;}
+}
+  
+void FormalList():
+{ Token t =null; }
+{Type() t=<IDENTIFIER> (FormalRest())*
+ {jjtThis.value=t.image;}
+ }
+
+void FormalRest():
+{ Token t =null;}
+{"," Type() t=<IDENTIFIER>
+ {jjtThis.value=t.image;}
+}
+
+void Type():
+{Token t=null;}
+{(t=<BOOLEAN>|t=<INT>| t= <STRING>|t= <FLOAT>|t=<DOUBLE>|t=<LONG>|t=<VOID>|t=<IDENTIFIER>)
+{jjtThis.value=t.image;}
+}
+  
+void Statement():
+{Token t1 =null,t2 =null; }
+{ (t1=<LACCOLADE>(Statement())*<RACCOLADE>)
+| (t1=<IF><LPAREN>Condition()<RPAREN>Statement())
+| (t1=<WHILE><LPAREN>Condition()<RPAREN>Statement())
+| (t1=<PRINTLN><LPAREN>Exp()<RPAREN>";")
+| ( (t1=<IDENTIFIER>) ( ("=" Exp())|
+                       ("["ExpArm()"]" "=" ExpArm())
+                     )
+   ";")
+{jjtThis.value=t1==null?null:t1;}
+}
+
+void Exp():
+ { }
+ {Condition()}
+
+ void Condition():
+{Token t =null; }
+ {ExpLog()
+|(t="!" ExpLog())
+{jjtThis.value=t==null?null:t.image;}
+}
+
+
+ void ExpLog():
+{Token t =null; }
+ {(ExpRel()|t=< TRUE >|t=< FALSE >)
+ExpLog2()
+{jjtThis.value=t;}
+ }
+
+ void ExpLog2():
+ { }
+{(OpLog() ExpRel() ExpLog2())?
+}
+
+void OpLog():
+{Token t =null; }
+{t="&&" | t="||"
+{jjtThis.value=t==null?null:t.image;}
+}
+
+void ExpRel():
+{ }
+{( ("("Condition() ")") | (ExpArm() OpRel() ExpArm()) | ExpArm())
+}
+  
+void OpRel():
+{Token t =null; }
+{t="==" | t="!=" | t="<" | t=">" | t="<=" | t=">="
+{jjtThis.value=t==null?null:t.image;}
+}
+
+void ExpArm():
+{}
+{ExpTerm() ExpArm2()
+}  
+  
+void ExpArm2():
+{ }
+{(OpAd() ExpTerm() ExpArm2())?
+}
+
+void OpAd():
+{Token t =null; }
+{ t="+" | t="-"
+{jjtThis.value=t==null?null:t.image;}
+}
+
+void ExpTerm():
+{ }
+{ExpFact() ExpTerm2()
+}
+
+void ExpTerm2():
+{ }
+{(OpMul() ExpFact() ExpTerm2())?
+}
+
+void OpMul():
+{Token t =null; }
+{ t="*" | t="/"
+{jjtThis.value=t==null?null:t.image;}
+}
+
+void ExpFact():
+{Token t =null; }
+{t=< INTEGER >| t=<LITERAL >|( "(" ExpArm() ")" )| Access()
+{jjtThis.value=t==null?null:t.image;}
+}
+
+void Access():
+{ }
+{(Call() "[" ExpArm() "]" )| Call()
+}
+
+void Call():
+{ }
+{CallTarget() Call2()
+}
+  
+void Call2():
+{Token t =null; }
+{("."  (t=<LENGTH> | (t=< IDENTIFIER > "(" ExpList() ")" Call2() )) )?
+{jjtThis.value=t==null?null:t.image;}
+}
+
+void CallTarget():
+{Token t =null,t1=null; }
+{(t=< NEW > ( (< INT > "["ExpArm()"]")|(t1=< IDENTIFIER ><LPAREN ><RPAREN >)))
+| t=< IDENTIFIER >
+| t=< THIS >
+{
+ Token t2[]= {t,t1};
+ jjtThis.value=t;}
+}
+  
+void ExpList():
+{ }
+{(Exp() (ExpRest())*)?
+}
+
+void ExpRest():
+{}
+{"," Exp()
+{jjtThis.value=",";}
+}

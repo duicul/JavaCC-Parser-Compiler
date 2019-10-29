@@ -1,4 +1,4 @@
-package domain;
+package domainvalue;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -99,11 +99,6 @@ public class DomainTable {
 	for(TypeTable t:this.tt)
 		s+=t.toString();
 	return d.toString()+"\n"+s;
-	}
-	
-	public static void testExpression(String exp,String type) {
-		if(!exp.equals(type))
-			throw new DomainException("Wrong type for "+exp);
 	}
 	
 	public void generatetree() {
