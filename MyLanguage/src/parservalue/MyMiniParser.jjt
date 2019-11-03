@@ -16,15 +16,19 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
-import domain.DomainTable; 
+import domainvalue.DomainTable;
+import domainvalue.Domain;
 public class MyMiniParser{  public static void main(String args [])  {    System.out.println("Reading from standard input...");
     try    { InputStream is=new FileInputStream(new File("test03.java"));
-      MyMiniParser p = new MyMiniParser(is);      SimpleNode n = p.Program();      n.dump("");      System.out.println("Thank you.");
+      MyMiniParser p = new MyMiniParser(is);      SimpleNode n = p.Program();      n.dump("");      System.out.println("Thank you ");
       //PrintVisitor pv= new PrintVisitor();
       //n.jjtAccept(pv,null);
       DomainVisitor dv= new DomainVisitor();
       n.jjtAccept(dv,null);
-      System.out.println(DomainTable.instance());
+      DomainTable domaux=DomainTable.instance();
+      TypeVisitor typev= new TypeVisitor();
+      n.jjtAccept(typev,null);
+      DomainTable domaux1=DomainTable.instance();
       DefaultMutableTreeNode dmt=new DefaultMutableTreeNode("Root");
       TreeVisitor tv= new TreeVisitor();	  n.jjtAccept(tv,dmt);
 	  new TreeDisplay(new JTree(dmt),500,500);
@@ -54,6 +58,7 @@ public class MyMiniParser{  public static void main(String args [])  {    Sy
 | <THIS: "this">
 | <NEW: "new">
 | < PACKAGE: "package" >
+| <INTARRAY: "int[]">
 } 
 
 TOKEN : /* IDENTIFIERS */
@@ -66,7 +71,7 @@ TOKEN : /* IDENTIFIERS */
 TOKEN : /* IDENTIFIERS */
 {
   <INTEGER: (<DIGIT>|["1"-"9"](<DIGIT >)*) >
-| <LITERAL: (<LETTER>|<INTEGER>)+ >
+| <LITERAL: "\""(<LETTER>|<INTEGER>)+"\"" >
 }
 
 TOKEN : /* SEPARATORS */
@@ -141,7 +146,7 @@ void FormalRest():
 
 void Type():
 {Token t=null;}
-{(t=<BOOLEAN>|t=<INT>| t= <STRING>|t= <FLOAT>|t=<DOUBLE>|t=<LONG>|t=<VOID>|t=<IDENTIFIER>)
+{(t=<BOOLEAN>|t=<INT>| t= <STRING>|t= <FLOAT>|t=<DOUBLE>|t=<LONG>|t=<VOID>|t=<INTARRAY>|t=<IDENTIFIER>)
 {jjtThis.value=t.image;}
 }
   
@@ -151,11 +156,12 @@ void Statement():
 | (t1=<IF><LPAREN>Condition()<RPAREN>Statement())
 | (t1=<WHILE><LPAREN>Condition()<RPAREN>Statement())
 | (t1=<PRINTLN><LPAREN>Exp()<RPAREN>";")
-| ( (t1=<IDENTIFIER>) ( ("=" Exp())|
-                       ("["ExpArm()"]" "=" ExpArm())
+| ( (t1=<IDENTIFIER>) ( (t2="=" Exp())|
+                       (t2="["ExpArm()"]" "=" ExpArm())
                      )
    ";")
-{jjtThis.value=t1==null?null:t1;}
+{Token t[] = { t1,t2 };
+  jjtThis.value=t;}
 }
 
 void Exp():
@@ -189,13 +195,13 @@ void OpLog():
 }
 
 void ExpRel():
-{ }
-{( ("("Condition() ")") | (ExpArm() OpRel() ExpArm()) | ExpArm())
-}
-  
+{Token t =null; }
+{( (t="("Condition() ")") | (ExpArm() OpRel() ExpArm()) | ExpArm())
+{jjtThis.value=t==null?null:t;} }
+
 void OpRel():
 {Token t =null; }
-{t="==" | t="!=" | t="<" | t=">" | t="<=" | t=">="
+{t="==" | t="!=" | t="<" | t=">" | t="<="  | t=">="
 {jjtThis.value=t==null?null:t.image;}
 }
 
@@ -233,13 +239,14 @@ void OpMul():
 
 void ExpFact():
 {Token t =null; }
-{t=< INTEGER >| t=<LITERAL >|( "(" ExpArm() ")" )| Access()
-{jjtThis.value=t==null?null:t.image;}
+{(t=<INTEGER>|t=<LITERAL>|t="(" ExpArm() ")" | Access())
+{jjtThis.value=t==null?null:t;}
 }
 
 void Access():
-{ }
+{Token t =null; }
 {(Call() "[" ExpArm() "]" )| Call()
+{jjtThis.value=t==null?null:t;}
 }
 
 void Call():
@@ -255,7 +262,7 @@ void Call2():
 
 void CallTarget():
 {Token t =null,t1=null; }
-{(t=< NEW > ( (< INT > "["ExpArm()"]")|(t1=< IDENTIFIER ><LPAREN ><RPAREN >)))
+{(t=< NEW > ( (t1=< INT > "["ExpArm()"]")|(t1=< IDENTIFIER ><LPAREN ><RPAREN >)))
 | t=< IDENTIFIER >
 | t=< THIS >
 {

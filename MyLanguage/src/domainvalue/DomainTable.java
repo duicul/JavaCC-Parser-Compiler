@@ -10,7 +10,9 @@ import javax.swing.JTree;
 import javax.swing.WindowConstants;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-
+import domainvalue.Class;
+import domainvalue.Domain;
+import domainvalue.Method;
 import parser.TreeVisitor;
 
 public class DomainTable {
@@ -117,5 +119,79 @@ public class DomainTable {
 	public void addfinalanalysis(Domain parent,DomainException de,Domain child) {
 		this.finaltest.add(new Truple(parent,de,child));
 	}
+
+	public String getType(String varname,String class_name) {
+		Domain d=this.current;
+		if(this.current==null)
+			throw new DomainException("Position in domain tree not found");
+		if(!(this.current instanceof Program)) 
+			for(;!(d.upper==null||d instanceof Program);d=d.upper);
+		if(d instanceof Program) {
+			Program p=(Program)d;
+			for(Packet pa:p.lp)
+				for(Class cl:pa.lc) {
+					if(cl.name.equals(class_name)) {
+						for(ClassVar cv:cl.lcv)
+							if(cv.name.equals(varname))
+								return cv.type;
+						for(Method m:cl.lm) {
+							for(Var va:m.lv)
+								if(va.name.equals(varname))
+									return va.type;
+							for(Argument a:m.lm)
+								if(a.name.equals(varname))
+									return a.type;
+						}
+					}
+				}
+			}	
+			else throw new DomainException("Program node in domain tree not found");
+		
+		throw new DomainException("Variable "+varname+" was not defined");}
+	
+	public String methodType(String name, String class_name) {
+		Domain d =this.current;
+		if(this.current==null)
+			throw new DomainException("Position in domain tree not found");
+		if(!(this.current instanceof Program)) 
+			for(;!(d.upper==null||d instanceof Program);d=d.upper);
+			if(d instanceof Program) {
+			Program p=(Program)d;
+			for(Packet pa:p.lp)
+				for(Class cl:pa.lc) {
+					if(cl.name.equals(class_name))
+					for(Method m:cl.lm)
+						if(m.name.equals(name))
+							return m.val;
+					if(cl.extend.equals(class_name)) {
+						String s=methodType(name,cl.name);
+						if(s!=null) return s;
+							return methodType(name,cl.name);}
+				}
+			}	
+			else throw new DomainException("Program node in domain tree not found");
+		
+		throw new DomainException("Method "+name+" was not defined");	
+	}
+	
+	public boolean issuperClass(String subclass,String superclass) {
+		if(subclass==null|superclass==null)
+			return true;
+		if(subclass.equals(superclass))
+			return true;
+		Domain d = this.current;
+		if(!(this.current instanceof Program)) 
+			for(;!(d.upper==null||d instanceof Program);d=d.upper);
+			if(d instanceof Program) {
+				for(Packet p:((Program)d).lp)
+					for(Class c:p.lc)
+						if(c.name.equals(subclass))
+							if(c.extend!=null)
+								return this.issuperClass(c.name, superclass);
+						
+			}
+		return false;
+	}
+	
 	
 }

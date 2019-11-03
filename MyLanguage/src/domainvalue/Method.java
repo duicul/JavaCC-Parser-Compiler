@@ -5,10 +5,13 @@ import java.util.List;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import domainvalue.Argument;
+import domainvalue.Var;
+
 public class Method extends Domain {
-	private String val,access;
-	private List<Argument> lm=new ArrayList<Argument>();
-	private List<Var> lv=new ArrayList<Var>();
+	public final String val,access;
+	public final List<Argument> lm=new ArrayList<Argument>();
+	public final List<Var> lv=new ArrayList<Var>();
 	public Method(String name,String val,String access) {
 		this.name=name;
 		this.val=val;
@@ -135,4 +138,13 @@ public class Method extends Domain {
 		for(Var v:this.lv)
 			v.generatetree(dmt3);		
 	}
+
+	public String getType(String varname) {
+		for(Argument a:this.lm)
+			if(a.name.equals(varname))
+				return a.type;
+		for(Var v:this.lv)
+			if(v.name.equals(varname))
+				return v.type;
+		return null;}
 }

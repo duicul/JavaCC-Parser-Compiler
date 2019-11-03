@@ -1,19 +1,10 @@
 package parservalue;
 
-import java.awt.image.TileObserver;
-
-import domainvalue.Argument;
-import domainvalue.ClassVar;
-import domainvalue.Domain;
 import domainvalue.DomainTable;
-import domainvalue.Method;
-import domainvalue.Packet;
-import domainvalue.Program;
-import domainvalue.Var;
 import domainvalue.DomainException;
 
-public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
-
+public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
+	private String current_class=null;
 	@Override
 	public Object visit(SimpleNode node, Object data) {
 		// TODO Auto-generated method stub
@@ -22,202 +13,158 @@ public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants 
 
 	@Override
 	public Object visit(ASTProgram node, Object data) {
-		DomainTable.instance().add(new Program("Start"));
-		DomainTable.instance().add(new Packet((String) node.value));
 		if(node.children!=null)
 		for(Node n:node.children)
 			n.jjtAccept(this, data);
-		DomainTable.instance().jumpup();
-		DomainTable.instance().jumpup();
 		return data;
 	}
 
 	@Override
 	public Object visit(ASTMainClass node, Object data) {
-		DomainTable.instance().add(new domainvalue.Class((String) node.value,null));
+		this.current_class=(String) node.value;
 		if(node.children!=null)
 		for(Node n:node.children)
 			n.jjtAccept(this, "Class");
-		DomainTable.instance().jumpup();
 		return data;
 	}
 
 	@Override
 	public Object visit(ASTClassDecl node, Object data) {
-		String [] s=(String[]) node.value;
-		DomainTable.instance().add(new domainvalue.Class(s[0],s[1]));
+		this.current_class=((String[]) node.value)[0];
 		if(node.children!=null)
 		for(Node n:node.children)
 			n.jjtAccept(this, "Class");
-		DomainTable.instance().jumpup();
 		return data;
 	}
 
 	@Override
 	public Object visit(ASTVarDecl node, Object data) {
-		String name=(String) node.value;
 		if(node.children!=null) {
-			Object o= node.children[0].jjtAccept(this, data),o1 = null;
+			node.children[0].jjtAccept(this, data);
 			if(node.children.length>1)
-				o1= node.children[1].jjtAccept(this, data);
-			Domain d=null;
-			if("Class".equals((String)data))
-				d=new ClassVar((String)o,name,(String)o1,"package");
-			else if("Argument".equals((String)data))
-				d=new Argument((String)o,name);
-			else if("Method".equals((String)data))
-				d=new Var(o.toString(),(String) node.value,(String)o1);
-			if(d!=null) {
-				DomainTable.instance().add(d);
-				DomainTable.instance().jumpup();}
-		}
-		
-		return data;
-	}
+				node.children[1].jjtAccept(this, data);}
+		return data;}
 
 	@Override
 	public Object visit(ASTMethodDecl node, Object data) {
-		String name=(String) node.value;
 		if(node.children!=null) {
-			String type =  (String) node.children[0].jjtAccept(this, "MethodReturn");
-			DomainTable.instance().add(new Method(name,type,"public"));
+			node.children[0].jjtAccept(this, "MethodReturn");
 			for(int i=1;i<node.children.length;i++)
-				node.children[i].jjtAccept(this, "Method");
-			DomainTable.instance().jumpup();
-			
-		}
-		return data;
-	}
+				node.children[i].jjtAccept(this, "Method");}
+		return data;}
 
 	@Override
 	public Object visit(ASTFormalList node, Object data) {
-		String name=(String) node.value;
 		if(node.children!=null) {
-			String type =  (String) node.children[0].jjtAccept(this, data);
-			DomainTable.instance().add(new Argument(type,name));
-			DomainTable.instance().jumpup();
+			node.children[0].jjtAccept(this, data);
 			for(int i=1;i<node.children.length;i++)
-				node.children[i].jjtAccept(this, "Argument");
-			
-		}
-		return data;
-	}
+				node.children[i].jjtAccept(this, "Argument");}
+		return data;}
 
 	@Override
 	public Object visit(ASTFormalRest node, Object data) {
-		String name=(String) node.value;
 		if(node.children!=null) {
-			String type =  (String) node.children[0].jjtAccept(this, "Argument");
-			DomainTable.instance().add(new Argument(type,name));
-			DomainTable.instance().jumpup();
-		}
-		return data;
-	}
+			node.children[0].jjtAccept(this, "Argument");}
+		return data;}
 
 	@Override
 	public Object visit(ASTType node, Object data) {
-		if("MethodReturn".equals((String)data))
-			return node.value;
-		if("Argument".equals((String)data)) {
-			DomainTable.instance().addtype((String) node.value,null);
-		}
-		DomainTable.instance().addtype((String) node.value,null);
-		return node.value;
-	}
+		return node.value;}
 
 	@Override
 	public Object visit(ASTStatement node, Object data) {
-		// TODO Removed Type check
-		/*Token t=((Token[]) node.value)[0];
-		Token t1=((Token[]) node.value)[1];
+		Token[] t=((Token[]) node.value);
 		if(t!=null) {
-			if(node.children.length>0) {
-			if(t.kind==IF)
-				((String[])node.children[0].jjtAccept(this, t))[0].equals("boolean");
-			else if(t.kind==WHILE)
-				((String[])node.children[0].jjtAccept(this, t))[0].equals("boolean");
-			else if(t.kind==PRINTLN)
-			{}
-			else if(t.kind==LACCOLADE)
-			{}
-			else if(t.kind==IDENTIFIER)
-			{if(t1.image.equals("="))
-			{String id=t.image;
-			String exp_type=((String[])node.children[0].jjtAccept(this, t))[0];
-			DomainTable.instance().getType(id).equals(exp_type);}
-			else if(t1.image.equals("["))
-			{String id_type=DomainTable.instance().getType(t.image);
-			String ind_type=((String[])node.children[0].jjtAccept(this, t))[0];
-			String exp_type=((String[])node.children[1].jjtAccept(this, t))[0];
-			boolean ret=ind_type.equals("int")&&exp_type.equals("int")&&id_type.equals("");
-				
+			if(node.children!=null&&node.children.length>0) {
+				if(t[0].kind==IF) {
+					if(!((String[])node.children[0].jjtAccept(this, t))[0].equals("boolean"))
+						throw new DomainException("Line "+((Token)node.value).beginLine+": IF instruction needs a boolean expression");}
+				else if(t[0].kind==WHILE) {
+					if(!((String[])node.children[0].jjtAccept(this, t))[0].equals("boolean"))
+						throw new DomainException("Line "+((Token)node.value).beginLine+": WHILE instruction needs a boolean expression");}
+				else if(t[0].kind==PRINTLN)
+					{}
+				else if(t[0].kind==LACCOLADE)
+					{}
+				else if(t[0].kind==IDENTIFIER){
+					if(t[1].image.equals("=")){
+						String id=t[0].image;
+						String exp_type=((String[])node.children[0].jjtAccept(this, t))[0];
+						DomainTable dt=DomainTable.instance();
+						String id_type=dt.getType(id, this.current_class);
+						if(!DomainTable.instance().issuperClass(id_type,exp_type))
+							throw new DomainException("Line "+t[0].beginLine+": variable "+id_type+" "+id+" needs to be assigned a subclass of "+exp_type);
+					}
+					else if(t[1].image.equals("[")){
+						String id_type=DomainTable.instance().getType(t[0].image,this.current_class);
+						String ind_type=((String[])node.children[0].jjtAccept(this, t))[0];
+						String exp_type=((String[])node.children[1].jjtAccept(this, t))[0];
+						if(!id_type.equals("int[]"))
+							throw new DomainException("Line "+t[0].beginLine+": needs an integer array ");
+						if(!ind_type.equals("int"))
+							throw new DomainException("Line "+t[0].beginLine+": index should be of type integer ");
+						if(!exp_type.equals("int"))
+							throw new DomainException("Line "+t[0].beginLine+": integer array has to assign an integer ");
+					}
+				}
 			}
-			}
-			}}
-        */
+		}
 		return null;
 	}
 
 	@Override
 	public Object visit(ASTExp node, Object data) {
-		// TODO Removed Type check
-		/*Token t=(Token)node.value;
+		Token t=(Token)node.value;
 		System.out.println("Token"+t);
 		String [] type=(String [])node.children[0].jjtAccept(this,data);
 		return type;
-		switch(t.kind) {
-		case PRINTLN : break;
-		case IF:DomainTable.testExpression((String)node.children[0].jjtAccept(this,IF),"boolean"); break;
-		}
-		String name=(String) node.value;*/
-		//if(name!=null)
-		//	DomainTable.instance().typeexists(name);
-		return null;
 	}
 
 	@Override
 	public Object visit(ASTCondition node, Object data) {
-		// TODO Removed Type check
-		/*String[] type=(String []) node.children[0].jjtAccept(this,data);
+		String[] type=(String []) node.children[0].jjtAccept(this,data);
 		if(node.value!=null&&((Token)node.value).image=="!"&&!type.equals("boolean"))
 			throw new DomainException("Line "+((Token)node.value).beginLine+": ! needs to be followed by a boolean expression");
-		return type;*/
-		return null;}
+		return type;
+	}
 
 	@Override
 	public Object visit(ASTExpLog node, Object data) {
-		// TODO Removed Type check
-		/*Token t=(Token) node.value;
+		Token t=(Token) node.value;
 		String s []=new String [2];
-		String[] explog2_type=(String []) node.children[0].jjtAccept(this,data);
-		if(explog2_type!=null&&!explog2_type.equals("boolean"))
-			throw new DomainException("Line "+t.beginLine+": needs to contain a boolean expression");
-		if(data!=null) {
-		if(t==null)
-		   return node.children[0].jjtAccept(this,data);
-		else
-		if(t.kind==TRUE) {
-		   s[0]="boolean";
-		   s[1]="true";}
-		else if(t.kind==FALSE){
-			   s[0]="boolean";
-			   s[1]="true";}
+		String[] explog2_type=(String []) node.children[1].jjtAccept(this,data);
+		if(explog2_type==null) {
+				if(node.children!=null)
+				return node.children[0].jjtAccept(this,data);
+				else if(t.kind==TRUE) {
+				   s[0]="boolean";
+				   s[1]="true";
+				   return s;}
+				else if(t.kind==FALSE){
+					   s[0]="boolean";
+					   s[1]="true";
+					   return s;}
+				else throw new DomainException("Line "+t.beginLine+": expression not given");
+			}
+		if(explog2_type!=null)
+			if(!explog2_type[0].equals("boolean"))
+				throw new DomainException("Needs to contain a boolean expression");
+			else {String[] ret= {"boolean"};
+				  return ret;}
+		throw new DomainException("Line "+t.beginLine+": state unknown");
 		}
-		return s;*/
-		return null;}
 
 	@Override
 	public Object visit(ASTExpLog2 node, Object data) {
-		// TODO Removed Type check
-		/*if(node.children.length==0)
+		if(node.children==null)
 			return null;
 		String[] exp_reltype=(String[]) node.children[1].jjtAccept(this,data);
 		String[] exp_log2type=(String[]) node.children[2].jjtAccept(this,data);
 		if(exp_reltype[0].equals("boolean")&&(exp_log2type[0].equals("boolean")||exp_log2type==null)) {
 			String[] ret= {"boolean"};
 			return ret;}
-		throw new DomainException("Line "+((Token)node.value).beginLine+": needs to contain a boolean expression");*/
-		return null;}
+		throw new DomainException("Line "+((Token)node.value).beginLine+": needs to contain a boolean expression");
+	}
 
 	@Override
 	public Object visit(ASTOpLog node, Object data) {
@@ -227,8 +174,7 @@ public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants 
 
 	@Override
 	public Object visit(ASTExpRel node, Object data) {
-		// TODO Removed Type check
-		/*Token t=(Token)node.value;
+		Token t=(Token)node.value;
 		if(t!=null&&t.image=="(")
 			return node.children[0].jjtAccept(this,data);
 		else if(node.children.length==1)
@@ -241,8 +187,8 @@ public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants 
 		    	return ret;}
 		throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");}
 		
-		throw new DomainException("Line "+((Token)node.value).beginLine+": unknows error");*/
-		return null;}
+		throw new DomainException("Line "+((Token)node.value).beginLine+": unknows error");
+	}
 
 	@Override
 	public Object visit(ASTOpRel node, Object data) {
@@ -252,18 +198,16 @@ public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants 
 
 	@Override
 	public Object visit(ASTExpArm node, Object data) {
-		// TODO Removed Type check
-		/*String[] exparm2=(String[]) node.children[1].jjtAccept(this,data);
+		String[] exparm2=(String[]) node.children[1].jjtAccept(this,data);
 		String[] rettype=(String[]) node.children[0].jjtAccept(this,data);
 		if((exparm2!=null&&!exparm2[0].contentEquals("int"))||!rettype[0].equals("int"))
 			throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
-		return rettype;*/
-		return null;}
+		return rettype;
+	}
 
 	@Override
 	public Object visit(ASTExpArm2 node, Object data) {
-		// TODO Removed Type check
-		/*if(node.children==null)
+		if(node.children==null)
 			return null;
 		String[] expterm=(String[]) node.children[1].jjtAccept(this,data);
 		String[] exparm2=(String[]) node.children[2].jjtAccept(this,data);
@@ -272,8 +216,8 @@ public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants 
 		if(exparm2[0]!=null&&!exparm2[0].equals("int"))
 			throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
 		String[] ret= {"int"};
-		return ret;*/
-		return null;}
+		return ret;
+	}
 
 	@Override
 	public Object visit(ASTOpAd node, Object data) {
@@ -283,18 +227,16 @@ public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants 
 
 	@Override
 	public Object visit(ASTExpTerm node, Object data) {
-		// TODO Removed Type check
-		/*String[] term2=(String[]) node.children[1].jjtAccept(this,data);
+		String[] term2=(String[]) node.children[1].jjtAccept(this,data);
 		String[] fact=(String[]) node.children[0].jjtAccept(this,data);
 		if((term2!=null&&!term2[0].contentEquals("int"))||!fact[0].equals("int"))
 			throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
-		return fact;*/
-		return null;}
+		return fact;
+	}
 
 	@Override
 	public Object visit(ASTExpTerm2 node, Object data) {
-		// TODO Removed Type check
-		/*if(node.children==null)
+		if(node.children==null)
 			return null;
 		String[] fact=(String[]) node.children[1].jjtAccept(this,data);
 		String[] term2=(String[]) node.children[2].jjtAccept(this,data);
@@ -303,8 +245,8 @@ public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants 
 		if(term2[0]!=null&&!term2[0].equals("int"))
 			throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
 		String[] ret= {"int"};
-		return ret;*/
-		return null;}
+		return ret;
+	}
 
 	@Override
 	public Object visit(ASTOpMul node, Object data) {
@@ -314,23 +256,24 @@ public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants 
 
 	@Override
 	public Object visit(ASTExpFact node, Object data) {
-		// TODO Removed Type check
-		/*Token t=(Token) node.value;
+		Token t=(Token) node.value;
 		if(t!=null&&t.kind==INTEGER) {
 			String[] ret= {"int"};
+			return ret;}
+		if(t!=null&&t.kind==LITERAL) {
+			String[] ret= {"String"};
 			return ret;}
 		if(t!=null&&t.image.equals("(")) {
 			if(!((String[]) node.children[0].jjtAccept(this,data))[0].equals("int"))
                throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
 			String[] ret= {"int"};
 			return ret;}
-		return node.children[0].jjtAccept(this,data);*/
-		return null;}
+		return node.children[0].jjtAccept(this,data);
+	}
 
 	@Override
 	public Object visit(ASTAccess node, Object data) {
-		// TODO Removed Type check
-		/*Token t=(Token) node.value;
+		Token t=(Token) node.value;
 		if(t.image.equals("[")) {
 			String[] call=(String[]) node.children[0].jjtAccept(this,data);
 			String[] arm=(String[]) node.children[1].jjtAccept(this,data);
@@ -340,25 +283,24 @@ public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants 
 				throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
 			String[] ret= {"int"};
 			return ret;}
-		return node.children[0].jjtAccept(this,data);*/
-		return null;}
+		return node.children[0].jjtAccept(this,data);
+	}
 
 	@Override
 	public Object visit(ASTCall node, Object data) {
-		// TODO Removed Type check
-		/*String[] target=(String[]) node.children[0].jjtAccept(this,data);
+		String[] target=(String[]) node.children[0].jjtAccept(this,data);
 		String[] call=(String[]) node.children[1].jjtAccept(this,target);
 		if(call.length>1&&call[1].equals("length")&&!target[0].equals("int[]"))
 			throw new DomainException("Line "+((Token)node.value).beginLine+": needs an integer array");
 		if(node.children[1]==null)
 			return target;
-		else return call;*/
-		return null;}
+		else return call;}
 
 	@Override
 	public Object visit(ASTCall2 node, Object data) {
-		// TODO Removed Type check
-		/*Token t=(Token) node.value;
+		// TODO Implement
+		Token t=(Token) node.value;
+		String[] target=(String[]) data;
 		if(t.kind==LENGTH) {
 		   String[] ret= {"int","length"};
 		   return ret;}
@@ -368,18 +310,37 @@ public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants 
 				String[] call2=(String[]) node.children[1].jjtAccept(this,data);
 				if(call2!=null)
 					return call2;
-				else return null;
+				else return DomainTable.instance().methodType(t.image,target[1]);
 			}
 			
 			
-		}*/			
+		}
+			
 		return null;
 	}
 
 	@Override
 	public Object visit(ASTCallTarget node, Object data) {
-		// TODO Auto-generated method stub
-		return null;
+		Token tarray[]=(Token []) node.value;
+		if(tarray[0].kind==NEW){
+			if(tarray[1].kind==INT) {
+				String [] s=(String[]) node.children[0].jjtAccept(this,data);
+				if(s==null||!s[0].equals("int"))
+					throw new DomainException("Line "+((Token)node.value).beginLine+": needs an integer index");
+			}
+			else if(tarray[1].kind==IDENTIFIER) {
+				String [] ret= {tarray[1].image};
+				return ret;}
+			throw new DomainException("Line "+((Token)node.value).beginLine+": Unknown");
+		}
+		else if(tarray[0].kind==IDENTIFIER)
+			return DomainTable.instance().getType(tarray[0].image,this.current_class);
+		else if(tarray[0].kind==THIS) {
+			if(this.current_class==null)
+				new DomainException("Line "+((Token)node.value).beginLine+": this used outside of a class");
+			return this.current_class;//DomainTable.instance().getType(this.current_class,this.current_class);
+			}
+		throw new DomainException("Line "+((Token)node.value).beginLine+": Unknown state");
 	}
 
 	@Override
@@ -390,14 +351,11 @@ public class DomainVisitor implements MyMiniParserVisitor,MyMiniParserConstants 
 
 	@Override
 	public Object visit(ASTExpRest node, Object data) {
-		// TODO Removed Type check
-		/*String name=(String) node.value;
+		String name=(String) node.value;
 		if(node.children!=null) {
 			String type =  (String) node.children[0].jjtAccept(this, "Argument");
-			DomainTable.instance().add(new Argument(type,name));
-			DomainTable.instance().jumpup();
 		}
-		return data;*/
-		return null;
+		return data;
 	}
+
 }

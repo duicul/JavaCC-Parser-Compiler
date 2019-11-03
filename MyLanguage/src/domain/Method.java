@@ -135,4 +135,14 @@ public class Method extends Domain {
 		for(Var v:this.lv)
 			v.generatetree(dmt3);		
 	}
+	
+	public String getType(String varname) {
+		for(Argument a:this.lm)
+			if(a.name.equals(varname))
+				return a.type;
+		for(Var v:this.lv)
+			if(v.name.equals(varname))
+				return v.type;
+		return null;}
+		
 }

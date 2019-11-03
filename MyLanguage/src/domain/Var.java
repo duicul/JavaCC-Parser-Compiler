@@ -3,7 +3,7 @@ package domain;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 public class Var extends Domain {
-    protected String name,val,type;
+	protected String name,val,type;
 	public Var(String type,String name,String val) {
 		this.type=type;
 		this.name=name;

@@ -12,6 +12,6 @@ public boolean equalname(String name) {
 public abstract boolean add(Domain d) throws DomainException;
 public abstract void generatetree(DefaultMutableTreeNode dmt);
 public static boolean isprimitive(String s) {
-	return s.equals("int")||s.equals("float")||s.equals("long")||s.equals("double")||s.equals("String");
+	return s.equals("int")||s.equals("float")||s.equals("long")||s.equals("double")||s.equals("String")||s.equals("int[]");
 }
 }

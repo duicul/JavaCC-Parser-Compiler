@@ -123,4 +123,20 @@ public class DomainTable {
 		this.finaltest.add(new Truple(parent,de,child));
 	}
 	
+	public String getType(String varname) {
+		Domain d;
+		for(d=this.current;d instanceof Method||d.upper==null;d=d.upper);
+		if(d instanceof Method) {
+			Method m=(Method) d;
+			String type=m.getType(varname);
+			if(type!=null)
+				return type;}
+		for(d=this.current;d instanceof Class||d.upper==null;d=d.upper);
+		if(d instanceof Class) {
+			Class c=(Class) d;
+			String type=c.getType(varname);
+			if(type!=null)
+				return type;}
+		return null;
+	}
 }

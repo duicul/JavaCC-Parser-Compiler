@@ -5,6 +5,8 @@ import java.util.List;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import domainvalue.ClassVar;
+
 public class Class extends Domain {
 	public final List<ClassVar> lcv=new ArrayList<ClassVar>();
 	public final List<Method> lm=new ArrayList<Method>();
@@ -121,5 +123,11 @@ public class Class extends Domain {
 			cv.generatetree(dmt3);
 		
 	}
+
+	public String getType(String varname) {
+		for(ClassVar v:this.lcv)
+			if(v.name.equals(varname))
+				return v.type;
+		return null;}
 
 }

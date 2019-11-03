@@ -118,8 +118,12 @@ public class Class extends Domain {
 		for(Method m:this.lm)
 			m.generatetree(dmt2);
 		for(ClassVar cv:this.lcv)
-			cv.generatetree(dmt3);
-		
-	}
+			cv.generatetree(dmt3);}
+	
+	public String getType(String varname) {
+		for(ClassVar v:this.lcv)
+			if(v.name.equals(varname))
+				return v.type;
+		return null;}
 
 }
