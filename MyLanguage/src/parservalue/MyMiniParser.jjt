@@ -1,8 +1,8 @@
 /**
  * JJTree template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
- */options{    LOOKAHEAD = 3;
+ */options{    LOOKAHEAD = 2;
 	FORCE_LA_CHECK = true;
-	CHOICE_AMBIGUITY_CHECK = 2;
+	CHOICE_AMBIGUITY_CHECK = 1;
 	OTHER_AMBIGUITY_CHECK = 1;
 	DEBUG_PARSER = true;
 	DEBUG_LOOKAHEAD = true ;
@@ -152,14 +152,11 @@ void Type():
   
 void Statement():
 {Token t1 =null,t2 =null; }
-{ (t1=<LACCOLADE>(Statement())*<RACCOLADE>)
+{ ((t1=<LACCOLADE>(Statement())*<RACCOLADE>)
 | (t1=<IF><LPAREN>Condition()<RPAREN>Statement())
 | (t1=<WHILE><LPAREN>Condition()<RPAREN>Statement())
 | (t1=<PRINTLN><LPAREN>Exp()<RPAREN>";")
-| ( (t1=<IDENTIFIER>) ( (t2="=" Exp())|
-                       (t2="["ExpArm()"]" "=" ExpArm())
-                     )
-   ";")
+| ( t1=<IDENTIFIER> ( (t2="=" Exp())|(t2="["ExpArm()"]" "=" ExpArm())) ";"))
 {Token t[] = { t1,t2 };
   jjtThis.value=t;}
 }
@@ -196,12 +193,12 @@ void OpLog():
 
 void ExpRel():
 {Token t =null; }
-{( (t="("Condition() ")") | (ExpArm() OpRel() ExpArm()) | ExpArm())
+{( (t="("Condition() ")") | (ExpArm() (OpRel() ExpArm())?))
 {jjtThis.value=t==null?null:t;} }
 
 void OpRel():
 {Token t =null; }
-{t="==" | t="!=" | t="<" | t=">" | t="<="  | t=">="
+{(t="==" | t="!=" | t="<" | t=">" | t="<="  | t=">=")
 {jjtThis.value=t==null?null:t.image;}
 }
 
@@ -245,7 +242,7 @@ void ExpFact():
 
 void Access():
 {Token t =null; }
-{(Call() "[" ExpArm() "]" )| Call()
+{Call() (t="[" ExpArm() "]")?
 {jjtThis.value=t==null?null:t;}
 }
 
@@ -257,17 +254,17 @@ void Call():
 void Call2():
 {Token t =null; }
 {("."  (t=<LENGTH> | (t=< IDENTIFIER > "(" ExpList() ")" Call2() )) )?
-{jjtThis.value=t==null?null:t.image;}
+{jjtThis.value=t==null?null:t;}
 }
 
 void CallTarget():
 {Token t =null,t1=null; }
-{(t=< NEW > ( (t1=< INT > "["ExpArm()"]")|(t1=< IDENTIFIER ><LPAREN ><RPAREN >)))
+{((t=< NEW > ( (t1=< INT > "["ExpArm()"]")|(t1=< IDENTIFIER ><LPAREN ><RPAREN >)))
 | t=< IDENTIFIER >
-| t=< THIS >
+| t=< THIS >)
 {
  Token t2[]= {t,t1};
- jjtThis.value=t;}
+ jjtThis.value=t2;}
 }
   
 void ExpList():

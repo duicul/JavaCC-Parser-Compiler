@@ -9,9 +9,13 @@ class Secondary extends Teta{
 	int[] h;
 	public void yup43(int hex1,int hex2){
 		int g;
-		h[3]=5;
-		if(56)
-			y="ana";
+		int q;
+		are=h[2];
+		g=h[3]+2;
+		are=23;
+		if(4==3) {
+			t=new Teta();
+		}
 	}
 	
 	public void yup43(String hex1,int  hex21){}

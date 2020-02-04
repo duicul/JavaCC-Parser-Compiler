@@ -1,0 +1,25 @@
+<INTEGER> (Operation() <INTEGER >)*
+| "\"" <LITERAL> "\""
+| <TRUE>
+| <FALSE>
+| <IDENTIFIER>
+| <THIS>
+| <NEW> ((<INT> "[" Exp() "]")|(<IDENTIFIER> <LPAREN><RPAREN>))
+| "!" Exp()
+| <LPAREN> Exp() <RPAREN>
+
+
+| Exp() "[" Exp() "]"
+| Exp() "." < LENGTH >
+| Exp() "." <IDENTIFIER> <LPAREN> ExpList() <RPAREN>
+
+
+A → Aα / β
+
+A → βA’
+
+A’ → αA’ / ∈
+
+(<INTEGER > | "\"" <LITERAL> "\"" | <TRUE>| <FALSE>| <IDENTIFIER>| <THIS>| <NEW> ((<INT> "[" Exp() "]")|(<IDENTIFIER> <LPAREN><RPAREN>))| "!" Exp()| <LPAREN> Exp() <RPAREN>)  A’
+
+"[" Exp() "]" A’ | "." < LENGTH > A’ | "." <IDENTIFIER> <LPAREN> ExpList() <RPAREN> A’| Operation()  A’

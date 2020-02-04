@@ -74,18 +74,26 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 	@Override
 	public Object visit(ASTStatement node, Object data) {
 		Token[] t=((Token[]) node.value);
-		if(t!=null) {
+		if(t!=null&&t[0]!=null) {
 			if(node.children!=null&&node.children.length>0) {
 				if(t[0].kind==IF) {
 					if(!((String[])node.children[0].jjtAccept(this, t))[0].equals("boolean"))
-						throw new DomainException("Line "+((Token)node.value).beginLine+": IF instruction needs a boolean expression");}
+						throw new DomainException("Line "+t[0].beginLine+": IF instruction needs a boolean expression");
+					node.children[1].jjtAccept(this, t);}
 				else if(t[0].kind==WHILE) {
 					if(!((String[])node.children[0].jjtAccept(this, t))[0].equals("boolean"))
-						throw new DomainException("Line "+((Token)node.value).beginLine+": WHILE instruction needs a boolean expression");}
-				else if(t[0].kind==PRINTLN)
-					{}
-				else if(t[0].kind==LACCOLADE)
-					{}
+						throw new DomainException("Line "+t[0].beginLine+": WHILE instruction needs a boolean expression");
+					node.children[1].jjtAccept(this, t);}
+				else if(t[0].kind==PRINTLN){
+					if(node.children.length>0) {
+						String exp_type=((String[])node.children[0].jjtAccept(this, t))[0];
+						if(!"String".equals(exp_type))
+							throw new DomainException("Line "+t[0].beginLine+": an expression of type "+exp_type+" is used. A String expression is needed");
+					}
+				}
+				else if(t[0].kind==LACCOLADE){
+					if(node.children.length>0)
+						node.children[0].jjtAccept(this, t);}
 				else if(t[0].kind==IDENTIFIER){
 					if(t[1].image.equals("=")){
 						String id=t[0].image;
@@ -93,7 +101,7 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 						DomainTable dt=DomainTable.instance();
 						String id_type=dt.getType(id, this.current_class);
 						if(!DomainTable.instance().issuperClass(id_type,exp_type))
-							throw new DomainException("Line "+t[0].beginLine+": variable "+id_type+" "+id+" needs to be assigned a subclass of "+exp_type);
+							throw new DomainException("Line "+t[0].beginLine+": variable "+id_type+" "+id+" needs to be assigned a subclass of "+id_type+". It is assigned a variable of type: "+exp_type);
 					}
 					else if(t[1].image.equals("[")){
 						String id_type=DomainTable.instance().getType(t[0].image,this.current_class);
@@ -124,7 +132,7 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 	public Object visit(ASTCondition node, Object data) {
 		String[] type=(String []) node.children[0].jjtAccept(this,data);
 		if(node.value!=null&&((Token)node.value).image=="!"&&!type.equals("boolean"))
-			throw new DomainException("Line "+((Token)node.value).beginLine+": ! needs to be followed by a boolean expression");
+			throw new DomainException("Line "+node.firstToken.beginLine+": ! needs to be followed by a boolean expression");
 		return type;
 	}
 
@@ -132,18 +140,20 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 	public Object visit(ASTExpLog node, Object data) {
 		Token t=(Token) node.value;
 		String s []=new String [2];
-		String[] explog2_type=(String []) node.children[1].jjtAccept(this,data);
+		String[] explog2_type=(String []) node.children[node.children.length-1].jjtAccept(this,data);//last child
 		if(explog2_type==null) {
-				if(node.children!=null)
-				return node.children[0].jjtAccept(this,data);
-				else if(t.kind==TRUE) {
-				   s[0]="boolean";
-				   s[1]="true";
-				   return s;}
-				else if(t.kind==FALSE){
-					   s[0]="boolean";
-					   s[1]="true";
-					   return s;}
+				if(t!=null) {
+						if(t.kind==TRUE) {
+							s[0]="boolean";
+							s[1]="true";
+							return s;}
+						else if(t.kind==FALSE){
+							s[0]="boolean";
+							s[1]="true";
+							return s;}
+				}
+				else if(node.children!=null)
+					return node.children[0].jjtAccept(this,data);
 				else throw new DomainException("Line "+t.beginLine+": expression not given");
 			}
 		if(explog2_type!=null)
@@ -163,12 +173,11 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 		if(exp_reltype[0].equals("boolean")&&(exp_log2type[0].equals("boolean")||exp_log2type==null)) {
 			String[] ret= {"boolean"};
 			return ret;}
-		throw new DomainException("Line "+((Token)node.value).beginLine+": needs to contain a boolean expression");
+		throw new DomainException("Line "+node.firstToken.beginLine+": needs to contain a boolean expression");
 	}
 
 	@Override
 	public Object visit(ASTOpLog node, Object data) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -185,14 +194,12 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 		    if(exparm1[0].equals("int")&&exparm2[0].equals("int")) {
 		    	String[] ret={"boolean"};
 		    	return ret;}
-		throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");}
-		
-		throw new DomainException("Line "+((Token)node.value).beginLine+": unknows error");
+		throw new DomainException("Line "+node.firstToken.beginLine+": needs integer expressions");}
+		throw new DomainException("Line "+node.firstToken.beginLine+": unknows error");
 	}
 
 	@Override
 	public Object visit(ASTOpRel node, Object data) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -200,8 +207,8 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 	public Object visit(ASTExpArm node, Object data) {
 		String[] exparm2=(String[]) node.children[1].jjtAccept(this,data);
 		String[] rettype=(String[]) node.children[0].jjtAccept(this,data);
-		if((exparm2!=null&&!exparm2[0].contentEquals("int"))||!rettype[0].equals("int"))
-			throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
+		if(exparm2!=null&&(!exparm2[0].contentEquals("int")||(rettype!=null&&!rettype[0].equals("int"))))
+			throw new DomainException("Line "+node.firstToken.beginLine+": needs integer expressions");
 		return rettype;
 	}
 
@@ -212,16 +219,15 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 		String[] expterm=(String[]) node.children[1].jjtAccept(this,data);
 		String[] exparm2=(String[]) node.children[2].jjtAccept(this,data);
 		if(!expterm[0].equals("int"))
-			throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
-		if(exparm2[0]!=null&&!exparm2[0].equals("int"))
-			throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
+			throw new DomainException("Line "+node.firstToken.beginLine+": needs integer expressions. Change the "+expterm[0]+" expression");
+		if(exparm2!=null&&exparm2[0]!=null&&!exparm2[0].equals("int"))
+			throw new DomainException("Line "+node.firstToken.beginLine+": needs integer expressions. Change the "+exparm2+" expression");
 		String[] ret= {"int"};
 		return ret;
 	}
 
 	@Override
 	public Object visit(ASTOpAd node, Object data) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -229,8 +235,8 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 	public Object visit(ASTExpTerm node, Object data) {
 		String[] term2=(String[]) node.children[1].jjtAccept(this,data);
 		String[] fact=(String[]) node.children[0].jjtAccept(this,data);
-		if((term2!=null&&!term2[0].contentEquals("int"))||!fact[0].equals("int"))
-			throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
+		if(term2!=null&&(!term2[0].contentEquals("int")||(fact!=null&&!fact[0].equals("int"))))
+			throw new DomainException("Line "+node.firstToken.beginLine+": needs integer expressions");
 		return fact;
 	}
 
@@ -241,16 +247,15 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 		String[] fact=(String[]) node.children[1].jjtAccept(this,data);
 		String[] term2=(String[]) node.children[2].jjtAccept(this,data);
 		if(!fact[0].equals("int"))
-			throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
+			throw new DomainException("Line "+node.firstToken.beginLine+": needs integer expressions");
 		if(term2[0]!=null&&!term2[0].equals("int"))
-			throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
+			throw new DomainException("Line "+node.firstToken.beginLine+": needs integer expressions");
 		String[] ret= {"int"};
 		return ret;
 	}
 
 	@Override
 	public Object visit(ASTOpMul node, Object data) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -265,7 +270,7 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 			return ret;}
 		if(t!=null&&t.image.equals("(")) {
 			if(!((String[]) node.children[0].jjtAccept(this,data))[0].equals("int"))
-               throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
+               throw new DomainException("Line "+node.firstToken.beginLine+": needs integer expressions");
 			String[] ret= {"int"};
 			return ret;}
 		return node.children[0].jjtAccept(this,data);
@@ -274,13 +279,13 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 	@Override
 	public Object visit(ASTAccess node, Object data) {
 		Token t=(Token) node.value;
-		if(t.image.equals("[")) {
+		if(t!=null&&t.image.equals("[")) {
 			String[] call=(String[]) node.children[0].jjtAccept(this,data);
 			String[] arm=(String[]) node.children[1].jjtAccept(this,data);
 			if(!call[0].equals("int[]"))
-				throw new DomainException("Line "+((Token)node.value).beginLine+": needs an integer array");
-			if(!arm[0].equals("int[]"))
-				throw new DomainException("Line "+((Token)node.value).beginLine+": needs integer expressions");
+				throw new DomainException("Line "+node.firstToken.beginLine+": needs an integer array");
+			if(arm!=null&&!arm[0].equals("int"))
+				throw new DomainException("Line "+node.firstToken.beginLine+": needs integer expressions");
 			String[] ret= {"int"};
 			return ret;}
 		return node.children[0].jjtAccept(this,data);
@@ -290,17 +295,17 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 	public Object visit(ASTCall node, Object data) {
 		String[] target=(String[]) node.children[0].jjtAccept(this,data);
 		String[] call=(String[]) node.children[1].jjtAccept(this,target);
-		if(call.length>1&&call[1].equals("length")&&!target[0].equals("int[]"))
-			throw new DomainException("Line "+((Token)node.value).beginLine+": needs an integer array");
-		if(node.children[1]==null)
+		if(call!=null&&call.length>1&&call[1].equals("length")&&!target[0].equals("int[]"))
+			throw new DomainException("Line "+node.firstToken.beginLine+": needs an integer array");
+		if(call==null)
 			return target;
 		else return call;}
 
 	@Override
 	public Object visit(ASTCall2 node, Object data) {
-		// TODO Implement
 		Token t=(Token) node.value;
 		String[] target=(String[]) data;
+		if(t!=null)
 		if(t.kind==LENGTH) {
 		   String[] ret= {"int","length"};
 		   return ret;}
@@ -312,12 +317,8 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 					return call2;
 				else return DomainTable.instance().methodType(t.image,target[1]);
 			}
-			
-			
 		}
-			
-		return null;
-	}
+		return null;}
 
 	@Override
 	public Object visit(ASTCallTarget node, Object data) {
@@ -326,21 +327,24 @@ public class TypeVisitor implements MyMiniParserVisitor,MyMiniParserConstants {
 			if(tarray[1].kind==INT) {
 				String [] s=(String[]) node.children[0].jjtAccept(this,data);
 				if(s==null||!s[0].equals("int"))
-					throw new DomainException("Line "+((Token)node.value).beginLine+": needs an integer index");
+					throw new DomainException("Line "+node.firstToken.beginLine+": needs an integer index");
+				return s;
 			}
 			else if(tarray[1].kind==IDENTIFIER) {
 				String [] ret= {tarray[1].image};
 				return ret;}
-			throw new DomainException("Line "+((Token)node.value).beginLine+": Unknown");
+			throw new DomainException("Line "+node.firstToken.beginLine+": Unknown");
 		}
-		else if(tarray[0].kind==IDENTIFIER)
-			return DomainTable.instance().getType(tarray[0].image,this.current_class);
+		else if(tarray[0].kind==IDENTIFIER) {
+			String s[]= {DomainTable.instance().getType(tarray[0].image,this.current_class)};
+			return s;}
 		else if(tarray[0].kind==THIS) {
 			if(this.current_class==null)
-				new DomainException("Line "+((Token)node.value).beginLine+": this used outside of a class");
-			return this.current_class;//DomainTable.instance().getType(this.current_class,this.current_class);
+				new DomainException("Line "+node.firstToken.beginLine+": this used outside of a class");
+			String s[]= {this.current_class};
+			return s;//DomainTable.instance().getType(this.current_class,this.current_class);
 			}
-		throw new DomainException("Line "+((Token)node.value).beginLine+": Unknown state");
+		throw new DomainException("Line "+node.firstToken.beginLine+": Unknown state");
 	}
 
 	@Override

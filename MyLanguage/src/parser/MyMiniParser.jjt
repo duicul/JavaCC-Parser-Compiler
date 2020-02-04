@@ -21,7 +21,7 @@ public class MyMiniParser{  public static void main(String args [])  {    Sy
     try    { InputStream is=new FileInputStream(new File("test01.java"));
       MyMiniParser p = new MyMiniParser(is);      SimpleNode n = p.Program();      n.dump("");      System.out.println("Thank you.");
       PrintVisitor pv= new PrintVisitor();
-      //n.jjtAccept(pv,null);
+      n.jjtAccept(pv,null);
       DomainVisitor dv= new DomainVisitor();
       n.jjtAccept(dv,null);
       System.out.println(DomainTable.instance());
